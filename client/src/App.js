@@ -52,7 +52,6 @@ const customers = [
 class App extends Component {
   render() {
     const {classes} = this.props;
-    console.log(classes)
     return (
       <Paper className={classes.root}>
         <Table className={classes.table}>
