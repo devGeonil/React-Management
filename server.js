@@ -1,38 +1,49 @@
 import express from "express";
 import bodyParser from "body-parser"
+import fs from "fs";
+import mysql from "mysql";
+
+import multer from "multer";
+const upload = multer({dest:'./upload'});
+
 const app = express();
 const port = process.env.PORT || 5000;
 
+
+const data = fs.readFileSync('./database.json');
+const conf = JSON.parse(data);
+const connection = mysql.createConnection({
+  host:conf.host,
+  user:conf.user,
+  password:conf.password,
+  port:conf.port,
+  database:conf.database
+});
+connection.connect();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
+app.use('/image', express.static('./upload'));
+
+
 
 app.get("/api/customers", (req, res)=>{
-  res.send([
-      {
-        "id":1,
-        "image":"https://placeimg.com/64/64/1",
-        "name" : "geonil",
-        "birthday" : "920105",
-        "gender" : "mail",
-        "job" : "dev"
-      },
-      {
-        "id":2,
-        "image":"https://placeimg.com/64/64/2",
-        "name" : "gildong",
-        "birthday" : "920512",
-        "gender" : "femail",
-        "job" : "dev1"
-      },
-      {
-        "id":3,
-        "image":"https://placeimg.com/64/64/3",
-        "name" : "yoonha",
-        "birthday" : "9244",
-        "gender" : "femail",
-        "job" : "dev2"
-      }
-  ]);
+  connection.query("SELECT * FROM customer", (err, rows, fields)=>res.send(rows))
+})
+
+app.post("/api/customers", upload.single('image'), (req, res)=>{
+  let sql = `INSERT INTO customer VALUES (null, ? , ? , ? , ? , ?)`;
+  let image = '/image/'+req.file.filename;
+  let cname = req.body.name;
+  let birthday = req.body.birthday;
+  let gender = req.body.gender;
+  let job = req.body.job;
+
+  let params = [image, cname, birthday, gender, job ];
+  connection.query(sql, params, (error, rows, fields)=>{
+    res.send(rows);
+  })
+
 })
 
 app.listen(port, ()=>console.log(`Listening on port ${port}`))
