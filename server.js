@@ -28,11 +28,11 @@ app.use('/image', express.static('./upload'));
 
 
 app.get("/api/customers", (req, res)=>{
-  connection.query("SELECT * FROM customer", (err, rows, fields)=>res.send(rows))
+  connection.query("SELECT * FROM customer WHERE isDeleted = 0", (err, rows, fields)=>res.send(rows))
 })
 
 app.post("/api/customers", upload.single('image'), (req, res)=>{
-  let sql = `INSERT INTO customer VALUES (null, ? , ? , ? , ? , ?)`;
+  let sql = `INSERT INTO customer VALUES (null, ? , ? , ? , ? , ?, now(), 0)`;
   let image = '/image/'+req.file.filename;
   let cname = req.body.name;
   let birthday = req.body.birthday;
@@ -43,7 +43,20 @@ app.post("/api/customers", upload.single('image'), (req, res)=>{
   connection.query(sql, params, (error, rows, fields)=>{
     res.send(rows);
   })
-
 })
+
+app.delete('/api/customers/:id', ( req, res) => {
+    let sql = `UPDATE customer set isDeleted = 1 WHERE ID = ?`;
+    let params = [req.params.id];
+    connection.query(sql, params, (error, rows, fields) => {
+      res.send(rows);
+      console.log(rows);
+    })
+})
+
+
+
+
+
 
 app.listen(port, ()=>console.log(`Listening on port ${port}`))
